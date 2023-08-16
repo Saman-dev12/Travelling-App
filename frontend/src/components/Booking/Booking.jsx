@@ -1,16 +1,20 @@
-import React,{useState} from 'react'
+import React,{useState,useContext} from 'react'
 import './booking.css'
 import {Form, FormGroup, ListGroup, ListGroupItem, Button} from 'reactstrap'
 import { useNavigate } from 'react-router-dom'
+import {AuthContext} from '../../context/AuthContext'
+import {BASE_URL} from '../../utils/config'
 
 const Booking = ({ tour, avgRating }) => {
 
-    const {price, reviews} = tour
+    const {price, reviews , title} = tour
     const navigate = useNavigate()
+    const {user} = useContext(AuthContext)
 
-    const [credentials, setCredentials] = useState({
-      userId: '01',
-      userEmail:'example@gmail.com',
+    const [booking, setBooking] = useState({
+      userId: user._id,
+      userEmail: user.email,
+      tourName : title,
       fullName:'',
       phone:'',
       guestSize:0,
@@ -18,19 +22,44 @@ const Booking = ({ tour, avgRating }) => {
     })
 
     const handleChange = e => {
-      setCredentials(prev => ({...prev,[e.target.id]:e.target.value}))
+      setBooking(prev => ({...prev,[e.target.id]:e.target.value}))
     }
     
     const serviceFee = 10;
     const totalAmount =
-    Number(price)*Number(credentials.guestSize)+Number(serviceFee)
+    Number(price)*Number(booking.guestSize)+Number(serviceFee)
 
     //send data to the server
-    const handleClick = e => {
+    const handleClick = async e => {
       e.preventDefault();
 
-      console.log(credentials);
-      navigate('/thank-you')
+      try {
+        if(!user || user===undefined || user === null){
+          alert("Please sign in");
+        }
+
+        const res = await fetch(`${BASE_URL}/bookings`,{
+          method:'post',
+          headers:{
+            "content-Type":"application/json",
+          },
+          credentials:"include",
+          body : JSON.stringify(booking)
+        })
+
+        const result = await res.json()
+
+        if(!res.ok){
+          return alert(result.message)
+        }
+        console.log(booking);
+        navigate('/thank-you')
+
+      } catch (error) {
+        alert(error.message)
+      }
+
+  
       
     }
 
@@ -40,7 +69,7 @@ const Booking = ({ tour, avgRating }) => {
         <h3>${price} <span>/per person</span></h3>
         <span className="tour__rating d-flex align-items-center">
                       <i
-                        class="ri-star-fill"
+                        className="ri-star-fill"
                       ></i>
                       {avgRating === 0 ? null : avgRating} ({reviews?.length})
                     </span>
@@ -66,7 +95,7 @@ const Booking = ({ tour, avgRating }) => {
       {/* {/*========== booking bottom =========*} */}
       <div className="booking__bottom"><ListGroup>
         <ListGroupItem className='border-0 px-0'>
-          <h5 className='d-flex align-items-center gap-1'>${price} <i class="ri-close-line"></i>1 person</h5>
+          <h5 className='d-flex align-items-center gap-1'>${price} <i className="ri-close-line"></i>1 person</h5>
           <span>${price}</span>
         </ListGroupItem>
         <ListGroupItem className='border-0 px-0'>
@@ -75,7 +104,7 @@ const Booking = ({ tour, avgRating }) => {
         </ListGroupItem>
         <ListGroupItem className='border-0 px-0 total'>
           <h5>Total</h5>
-          <span>${credentials.guestSize<1 ? 0 : totalAmount}</span> 
+          <span>${booking.guestSize<1 ? 0 : totalAmount}</span> 
         </ListGroupItem>
       </ListGroup>
 

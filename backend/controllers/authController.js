@@ -4,9 +4,10 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 
+
 export const register = async(req,res)=>{
     try {
-        const salt = bcrypt.genSaltSycn(10);
+        const salt = bcrypt.genSaltSync(10);
         const hash = bcrypt.hashSync(req.body.password,salt);
 
         const newUser = new User({
@@ -34,16 +35,15 @@ export const register = async(req,res)=>{
 
 export const login = async(req,res)=>{
     const email = req.body.email;
-
     try {
-        const user = User.findOne({email});
+        const user = await User.findOne({email});
         if(!user){
             return  res.status(403).json({
                 success : false,
                 message : "User not found"
             });
         };
-        let isMatch = await bcrypt.compare(req.body.password ,user.password );
+        let isMatch = await bcrypt.compare(req.body.password , user.password);
 
         if(!isMatch){
             res.status(401).json({
